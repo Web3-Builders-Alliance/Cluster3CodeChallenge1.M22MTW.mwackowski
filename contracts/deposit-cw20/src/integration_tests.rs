@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use crate::contract::execute;
     use crate::helpers::DepositContract;
     use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, Cw20HookMsg, Cw20DepositResponse, DepositResponse};
     use cosmwasm_std::{Addr, Coin, Empty, Uint128, to_binary, BankQuery, BankMsg, coin};
@@ -159,10 +160,32 @@ mod tests {
 
     #[test]
     fn deposit_cw20_and_withdraw_after_expiration_has_passed() {
-        unimplemented!()
+        let (mut app, deposit_id, cw20_id) = store_code();
+        let deposit_contract = deposit_instantiate(&mut app, deposit_id);
+        let cw20_contract = cw_20_instantiate(&mut app, cw20_id);
+
+        let balance = get_cw20_balance(&app, &cw20_contract, USER.to_string());
+        println!("Intial Balance {:?}", balance);
+
+        let hook_msg = Cw20HookMsg::Deposit { };
+
+        let msg = Cw20ExecuteMsg::Send { contract: deposit_contract.addr().to_string(), amount: Uint128::from(500u64), msg: to_binary(&hook_msg).unwrap() };
+        let cosmos_msg = cw20_contract.call(msg).unwrap();
+        app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
+
+        // let deposits = get_cw20_deposits(&app, &deposit_contract);
+        // println!("{:?}", deposits.deposits[0]);
+
+        let balance = get_cw20_balance(&app, &cw20_contract, deposit_contract.addr().into_string());
+        println!("Deposit Contract {:?}", balance);
+        assert_eq!(Uint128::from(500u64), balance.balance);
+
+        app.block_info().height = app.block_info().height.checked_add(15).unwrap();
+        let msg_withdraw = ExecuteMsg::WithdrawCw20 { address: USER.to_string(), amount: Uint128::from(250u64) };
+        // here's where Richard got stuck - the message should not pass
+        // app.execute(SENDER.to_string(), msg_withdraw);
+        let balance = get_cw20_balance(&app, &cw20_contract, USER.to_string());
+        println!("Post {:?}", balance);
     }
-
-
-
 
 }

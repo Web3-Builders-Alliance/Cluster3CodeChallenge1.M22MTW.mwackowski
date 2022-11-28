@@ -18,4 +18,6 @@ pub enum ContractError {
     #[error("User does not have coins from this cw20 to withdraw")]
     NoCw20ToWithdraw {},
 
+    #[error("Need to wait 20 blocks for withdrawal till: {val:?}")]
+    ExpirationTimeNotPassed { val: String },
 }

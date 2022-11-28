@@ -9,9 +9,9 @@ use cw_storage_plus::Map;
 pub struct Cw20Deposits {
     pub count: i32,
     pub owner: String,
-    pub contract:String,
-    pub amount:Uint128,
-    pub stake_time:Expiration
+    pub contract: String,
+    pub amount: Uint128,
+    pub stake_time: Expiration
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
