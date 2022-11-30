@@ -3,7 +3,7 @@ mod tests {
     use crate::contract::execute;
     use crate::helpers::DepositContract;
     use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, Cw20HookMsg, Cw20DepositResponse, DepositResponse};
-    use cosmwasm_std::{Addr, Coin, Empty, Uint128, to_binary, BankQuery, BankMsg, coin};
+    use cosmwasm_std::{Addr, Coin, Empty, Uint128, to_binary, BankQuery, BankMsg, coin, WasmMsg};
     use cw20::{Cw20Contract, Cw20Coin, BalanceResponse};
     use cw20_base::msg::ExecuteMsg as Cw20ExecuteMsg;
     use cw20_base::msg::InstantiateMsg as Cw20InstantiateMsg;
@@ -173,19 +173,16 @@ mod tests {
         let cosmos_msg = cw20_contract.call(msg).unwrap();
         app.execute(Addr::unchecked(USER), cosmos_msg).unwrap();
 
-        // let deposits = get_cw20_deposits(&app, &deposit_contract);
-        // println!("{:?}", deposits.deposits[0]);
+        let mut block = app.block_info();
+        block.height = app.block_info().height.checked_add(20).unwrap();
+        app.set_block(block);
 
-        let balance = get_cw20_balance(&app, &cw20_contract, deposit_contract.addr().into_string());
-        println!("Deposit Contract {:?}", balance);
-        assert_eq!(Uint128::from(500u64), balance.balance);
+        let msg = ExecuteMsg::WithdrawCw20 {address:cw20_contract.addr().to_string(), amount:Uint128::from(500u64)};
 
-        app.block_info().height = app.block_info().height.checked_add(15).unwrap();
-        let msg_withdraw = ExecuteMsg::WithdrawCw20 { address: USER.to_string(), amount: Uint128::from(250u64) };
-        // here's where Richard got stuck - the message should not pass
-        // app.execute(SENDER.to_string(), msg_withdraw);
-        let balance = get_cw20_balance(&app, &cw20_contract, USER.to_string());
-        println!("Post {:?}", balance);
+        let execute_msg = WasmMsg::Execute { contract_addr: deposit_contract.addr().to_string(), msg: to_binary(&msg).unwrap(), funds: vec![] };
+        app.execute(Addr::unchecked(USER), execute_msg.into()).unwrap();
+
+        
     }
 
 }
